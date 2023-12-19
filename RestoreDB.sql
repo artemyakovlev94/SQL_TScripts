@@ -1,16 +1,16 @@
 
--- Оргинал-источник: https://github.com/Tavalik/SQL_TScripts/tree/master
+-- РћСЂРіРёРЅР°Р»-РёСЃС‚РѕС‡РЅРёРє: https://github.com/Tavalik/SQL_TScripts/tree/master
 
--- База данных
+-- Р‘Р°Р·Р° РґР°РЅРЅС‹С…
 DECLARE @DBName as nvarchar(40) = 'db_name'
--- Дата, на котороую собирается цепочка файлов резервных копий, в формате '20160315 12:00:00'							
+-- Р”Р°С‚Р°, РЅР° РєРѕС‚РѕСЂРѕСѓСЋ СЃРѕР±РёСЂР°РµС‚СЃСЏ С†РµРїРѕС‡РєР° С„Р°Р№Р»РѕРІ СЂРµР·РµСЂРІРЅС‹С… РєРѕРїРёР№, РІ С„РѕСЂРјР°С‚Рµ '20160315 12:00:00'							
 DECLARE @BackupTime as datetime = GETDATE()
--- Имя почтового профиля, для отправки электонной почты									
+-- РРјСЏ РїРѕС‡С‚РѕРІРѕРіРѕ РїСЂРѕС„РёР»СЏ, РґР»СЏ РѕС‚РїСЂР°РІРєРё СЌР»РµРєС‚РѕРЅРЅРѕР№ РїРѕС‡С‚С‹									
 DECLARE @profile_name as nvarchar(100) = ''
--- Получатели сообщений электронной почты, разделенные знаком ";"				
+-- РџРѕР»СѓС‡Р°С‚РµР»Рё СЃРѕРѕР±С‰РµРЅРёР№ СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РїРѕС‡С‚С‹, СЂР°Р·РґРµР»РµРЅРЅС‹Рµ Р·РЅР°РєРѕРј ";"				
 DECLARE @recipients as nvarchar(500) = ''
 
--- СЛУЖЕБНЫЕ ПЕРЕМЕННЫЕ	
+-- РЎР›РЈР–Р•Р‘РќР«Р• РџР•Р Р•РњР•РќРќР«Р•	
 DECLARE @SQLString NVARCHAR(4000)
 DECLARE @backupfile NVARCHAR(500)
 DECLARE @physicalName NVARCHAR(500), @logicalName NVARCHAR(500)
@@ -18,14 +18,14 @@ DECLARE @error as int
 DECLARE @subject as NVARCHAR(100)
 DECLARE @finalmassage as NVARCHAR(1000)
 
--- ТЕЛО СКРИПТА
+-- РўР•Р›Рћ РЎРљР РРџРўРђ
 USE [master]
 
--- Удалим временные таблицы, если вдруг они есть
+-- РЈРґР°Р»РёРј РІСЂРµРјРµРЅРЅС‹Рµ С‚Р°Р±Р»РёС†С‹, РµСЃР»Рё РІРґСЂСѓРі РѕРЅРё РµСЃС‚СЊ
 IF OBJECT_ID('tempdb.dbo.#BackupFiles') IS NOT NULL DROP TABLE #BackupFiles
 IF OBJECT_ID('tempdb.dbo.#BackupFilesFinal') IS NOT NULL DROP TABLE #BackupFilesFinal
 
--- Соберем данные о всех сдаланных раннее бэкапах
+-- РЎРѕР±РµСЂРµРј РґР°РЅРЅС‹Рµ Рѕ РІСЃРµС… СЃРґР°Р»Р°РЅРЅС‹С… СЂР°РЅРЅРµРµ Р±СЌРєР°РїР°С…
 SELECT
 	backupset.backup_start_date,
 	backupset.backup_set_uuid,
@@ -38,14 +38,14 @@ FROM msdb.dbo.backupset AS backupset
 	ON backupset.media_set_id = backupmediafamily.media_set_id
 WHERE backupset.database_name = @DBName 
 	and backupset.backup_start_date < @BackupTime
-	and backupset.is_copy_only = 1 -- флаг "Только резервное копирование"
-	and backupset.is_snapshot = 0 -- флаг "Не snapshot"
-	and (backupset.description is null or backupset.description not like 'Image-level backup') -- Защита от Veeam Backup & Replication
+	and backupset.is_copy_only = 1 -- С„Р»Р°Рі "РўРѕР»СЊРєРѕ СЂРµР·РµСЂРІРЅРѕРµ РєРѕРїРёСЂРѕРІР°РЅРёРµ"
+	and backupset.is_snapshot = 0 -- С„Р»Р°Рі "РќРµ snapshot"
+	and (backupset.description is null or backupset.description not like 'Image-level backup') -- Р—Р°С‰РёС‚Р° РѕС‚ Veeam Backup & Replication
 	and device_type <> 7
 ORDER BY 
 	backupset.backup_start_date DESC
 
--- Найдем последний полный бэкап
+-- РќР°Р№РґРµРј РїРѕСЃР»РµРґРЅРёР№ РїРѕР»РЅС‹Р№ Р±СЌРєР°Рї
 SELECT TOP 1
 	BackupFiles.backup_start_date,
 	BackupFiles.physical_device_name,
@@ -63,41 +63,41 @@ ELSE
 	FROM #BackupFilesFinal)
 
 IF @physicalName = ''
-	-- Если получить элемент не удалось, то полная резерная копия не найдена
+	-- Р•СЃР»Рё РїРѕР»СѓС‡РёС‚СЊ СЌР»РµРјРµРЅС‚ РЅРµ СѓРґР°Р»РѕСЃСЊ, С‚Рѕ РїРѕР»РЅР°СЏ СЂРµР·РµСЂРЅР°СЏ РєРѕРїРёСЏ РЅРµ РЅР°Р№РґРµРЅР°
 	BEGIN
-		SET @subject = 'ОШИБКА ВОССТАНОВЛЕНИЯ базы данных ' + @DBName
-		SET @finalmassage = 'Не найдена полная резервная копия для базы данных ' + @DBName
+		SET @subject = 'РћРЁРР‘РљРђ Р’РћРЎРЎРўРђРќРћР’Р›Р•РќРРЇ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName
+		SET @finalmassage = 'РќРµ РЅР°Р№РґРµРЅР° РїРѕР»РЅР°СЏ СЂРµР·РµСЂРІРЅР°СЏ РєРѕРїРёСЏ РґР»СЏ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName
 	END
 ELSE
 	BEGIN
 
-	-- Установить монопольный режим
+	-- РЈСЃС‚Р°РЅРѕРІРёС‚СЊ РјРѕРЅРѕРїРѕР»СЊРЅС‹Р№ СЂРµР¶РёРј
 	SET @SQLString = N'ALTER DATABASE [' + @DBName + '] SET SINGLE_USER WITH ROLLBACK IMMEDIATE'
 
-	-- Выводим и выполняем полученную инструкцию
+	-- Р’С‹РІРѕРґРёРј Рё РІС‹РїРѕР»РЅСЏРµРј РїРѕР»СѓС‡РµРЅРЅСѓСЋ РёРЅСЃС‚СЂСѓРєС†РёСЋ
 	PRINT @SQLString
 	EXEC sp_executesql @SQLString
 	SET @error = @@error
 	IF @error <> 0
 		BEGIN
-			-- Если были ошибки, то восстановить полную копию не удалось
-			SET @subject = 'ОШИБКА ВОССТАНОВЛЕНИЯ базы данных ' + @DBName
-			SET @finalmassage = 'Ошибка установки монопольного режима для базы данных ' + @DBName + CHAR(13) + CHAR(13)
-				+ 'Код ошибки: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
-				+ 'Текст T-SQL: ' + CHAR(13) + @SQLString
+			-- Р•СЃР»Рё Р±С‹Р»Рё РѕС€РёР±РєРё, С‚Рѕ РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ РїРѕР»РЅСѓСЋ РєРѕРїРёСЋ РЅРµ СѓРґР°Р»РѕСЃСЊ
+			SET @subject = 'РћРЁРР‘РљРђ Р’РћРЎРЎРўРђРќРћР’Р›Р•РќРРЇ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName
+			SET @finalmassage = 'РћС€РёР±РєР° СѓСЃС‚Р°РЅРѕРІРєРё РјРѕРЅРѕРїРѕР»СЊРЅРѕРіРѕ СЂРµР¶РёРјР° РґР»СЏ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName + CHAR(13) + CHAR(13)
+				+ 'РљРѕРґ РѕС€РёР±РєРё: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
+				+ 'РўРµРєСЃС‚ T-SQL: ' + CHAR(13) + @SQLString
 		END
 	ELSE
 		BEGIN
 
-		-- Загружаем полный бэкап
+		-- Р—Р°РіСЂСѓР¶Р°РµРј РїРѕР»РЅС‹Р№ Р±СЌРєР°Рї
 		SET @SQLString = 
 		N'RESTORE DATABASE [' + @DBName + ']
 		FROM DISK = N''' + @physicalName + ''' 
 		WITH  
 		FILE = 1,'
 
-		-- Переименуем файлы базы данных на исходные
-		-- Новый цикл по всем файлам базы данных
+		-- РџРµСЂРµРёРјРµРЅСѓРµРј С„Р°Р№Р»С‹ Р±Р°Р·С‹ РґР°РЅРЅС‹С… РЅР° РёСЃС…РѕРґРЅС‹Рµ
+		-- РќРѕРІС‹Р№ С†РёРєР» РїРѕ РІСЃРµРј С„Р°Р№Р»Р°Рј Р±Р°Р·С‹ РґР°РЅРЅС‹С…
 		DECLARE fnc CURSOR LOCAL FAST_FORWARD FOR 
 		(
 			SELECT
@@ -124,99 +124,99 @@ ELSE
 		REPLACE,
 		STATS = 5'
 
-		-- Выводим и выполняем полученную инструкцию
+		-- Р’С‹РІРѕРґРёРј Рё РІС‹РїРѕР»РЅСЏРµРј РїРѕР»СѓС‡РµРЅРЅСѓСЋ РёРЅСЃС‚СЂСѓРєС†РёСЋ
 		PRINT @SQLString
 		EXEC sp_executesql @SQLString
 		SET @error = @@error
 		IF @error <> 0
 			BEGIN
-				-- Если были ошибки, то восстановить полную копию не удалось
-				SET @subject = 'ОШИБКА ВОССТАНОВЛЕНИЯ базы данных ' + @DBName
-				SET @finalmassage = 'Ошибка восстановления полной резервной копии для базы данных ' + @DBName + CHAR(13) + CHAR(13)
-					+ 'Код ошибки: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
-					+ 'Текст T-SQL: ' + CHAR(13) + @SQLString
+				-- Р•СЃР»Рё Р±С‹Р»Рё РѕС€РёР±РєРё, С‚Рѕ РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ РїРѕР»РЅСѓСЋ РєРѕРїРёСЋ РЅРµ СѓРґР°Р»РѕСЃСЊ
+				SET @subject = 'РћРЁРР‘РљРђ Р’РћРЎРЎРўРђРќРћР’Р›Р•РќРРЇ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName
+				SET @finalmassage = 'РћС€РёР±РєР° РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ РїРѕР»РЅРѕР№ СЂРµР·РµСЂРІРЅРѕР№ РєРѕРїРёРё РґР»СЏ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName + CHAR(13) + CHAR(13)
+					+ 'РљРѕРґ РѕС€РёР±РєРё: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
+					+ 'РўРµРєСЃС‚ T-SQL: ' + CHAR(13) + @SQLString
 			END
 		ELSE
 			BEGIN
 
-			-- 3. Переводим базу в оперативный режим
+			-- 3. РџРµСЂРµРІРѕРґРёРј Р±Р°Р·Сѓ РІ РѕРїРµСЂР°С‚РёРІРЅС‹Р№ СЂРµР¶РёРј
 			SET @SQLString = 
 			N'RESTORE DATABASE ' + @DBName + '
 			WITH RECOVERY'
 			
-			-- Выводим и выполняем полученную инструкцию
+			-- Р’С‹РІРѕРґРёРј Рё РІС‹РїРѕР»РЅСЏРµРј РїРѕР»СѓС‡РµРЅРЅСѓСЋ РёРЅСЃС‚СЂСѓРєС†РёСЋ
 			PRINT @SQLString	
 			EXEC sp_executesql @SQLString
 			SET @error = @@error
 			IF @error <> 0
 				BEGIN
-					-- Ошибка перевода базы в оперативный режим
-					SET @subject = 'ОШИБКА ВОССТАНОВЛЕНИЯ базы данных ' + @DBName
-					SET @finalmassage = 'Ошибка перевода в оперативный режим базы данных ' + @DBName + CHAR(13) + CHAR(13)
-						+ 'Код ошибки: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
-						+ 'Текст T-SQL: ' + CHAR(13) + @SQLString
+					-- РћС€РёР±РєР° РїРµСЂРµРІРѕРґР° Р±Р°Р·С‹ РІ РѕРїРµСЂР°С‚РёРІРЅС‹Р№ СЂРµР¶РёРј
+					SET @subject = 'РћРЁРР‘РљРђ Р’РћРЎРЎРўРђРќРћР’Р›Р•РќРРЇ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName
+					SET @finalmassage = 'РћС€РёР±РєР° РїРµСЂРµРІРѕРґР° РІ РѕРїРµСЂР°С‚РёРІРЅС‹Р№ СЂРµР¶РёРј Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName + CHAR(13) + CHAR(13)
+						+ 'РљРѕРґ РѕС€РёР±РєРё: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
+						+ 'РўРµРєСЃС‚ T-SQL: ' + CHAR(13) + @SQLString
 				END
 			ELSE
 				BEGIN
 
-				-- Переводим базу в простую модель восстановления
+				-- РџРµСЂРµРІРѕРґРёРј Р±Р°Р·Сѓ РІ РїСЂРѕСЃС‚СѓСЋ РјРѕРґРµР»СЊ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ
 				SET @SQLString = 
 					'ALTER DATABASE ' + @DBName + ' SET RECOVERY SIMPLE;'
 				
-				-- Выводим и выполняем полученную инструкцию
+				-- Р’С‹РІРѕРґРёРј Рё РІС‹РїРѕР»РЅСЏРµРј РїРѕР»СѓС‡РµРЅРЅСѓСЋ РёРЅСЃС‚СЂСѓРєС†РёСЋ
 				PRINT @SQLString	
 				EXEC sp_executesql @SQLString
 				SET @error = @@error
 				IF @error <> 0
 					BEGIN
-						-- Ошибка перевода базы в простую модель восстановлеия
-						SET @subject = 'ОШИБКА ВОССТАНОВЛЕНИЯ базы данных ' + @DBName
-						SET @finalmassage = 'Ошибка перевода в простую модель восстановления базы данных ' + @DBName + CHAR(13) + CHAR(13)
-							+ 'Код ошибки: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
-							+ 'Текст T-SQL: ' + CHAR(13) + @SQLString
+						-- РћС€РёР±РєР° РїРµСЂРµРІРѕРґР° Р±Р°Р·С‹ РІ РїСЂРѕСЃС‚СѓСЋ РјРѕРґРµР»СЊ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРёСЏ
+						SET @subject = 'РћРЁРР‘РљРђ Р’РћРЎРЎРўРђРќРћР’Р›Р•РќРРЇ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName
+						SET @finalmassage = 'РћС€РёР±РєР° РїРµСЂРµРІРѕРґР° РІ РїСЂРѕСЃС‚СѓСЋ РјРѕРґРµР»СЊ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName + CHAR(13) + CHAR(13)
+							+ 'РљРѕРґ РѕС€РёР±РєРё: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
+							+ 'РўРµРєСЃС‚ T-SQL: ' + CHAR(13) + @SQLString
 					END
 				ELSE
 					BEGIN
 
-					-- Запускаем сжатие базы данных
+					-- Р—Р°РїСѓСЃРєР°РµРј СЃР¶Р°С‚РёРµ Р±Р°Р·С‹ РґР°РЅРЅС‹С…
 					SET @SQLString = 
 						'DBCC SHRINKDATABASE(N''' + @DBName + ''');'
 					
-					-- Выводим и выполняем полученную инструкцию
+					-- Р’С‹РІРѕРґРёРј Рё РІС‹РїРѕР»РЅСЏРµРј РїРѕР»СѓС‡РµРЅРЅСѓСЋ РёРЅСЃС‚СЂСѓРєС†РёСЋ
 					PRINT @SQLString
 					EXEC sp_executesql @SQLString
 					SET @error = @@error
 					IF @error <> 0
 						BEGIN
-							-- Ошбика сжатия базы данных
-							SET @subject = 'ОШИБКА ВОССТАНОВЛЕНИЯ базы данных ' + @DBName
-							SET @finalmassage = 'Ошибка сжатия базы данных ' + @DBName + CHAR(13) + CHAR(13)
-								+ 'Код ошибки: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
-								+ 'Текст T-SQL: ' + CHAR(13) + @SQLString
+							-- РћС€Р±РёРєР° СЃР¶Р°С‚РёСЏ Р±Р°Р·С‹ РґР°РЅРЅС‹С…
+							SET @subject = 'РћРЁРР‘РљРђ Р’РћРЎРЎРўРђРќРћР’Р›Р•РќРРЇ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName
+							SET @finalmassage = 'РћС€РёР±РєР° СЃР¶Р°С‚РёСЏ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName + CHAR(13) + CHAR(13)
+								+ 'РљРѕРґ РѕС€РёР±РєРё: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
+								+ 'РўРµРєСЃС‚ T-SQL: ' + CHAR(13) + @SQLString
 						END
 					ELSE
 						BEGIN
 
-						-- Снять монопольный режим
+						-- РЎРЅСЏС‚СЊ РјРѕРЅРѕРїРѕР»СЊРЅС‹Р№ СЂРµР¶РёРј
 						SET @SQLString = N'ALTER DATABASE [' + @DBName + '] SET MULTI_USER'
 
-						-- Выводим и выполняем полученную инструкцию
+						-- Р’С‹РІРѕРґРёРј Рё РІС‹РїРѕР»РЅСЏРµРј РїРѕР»СѓС‡РµРЅРЅСѓСЋ РёРЅСЃС‚СЂСѓРєС†РёСЋ
 						PRINT @SQLString
 						EXEC sp_executesql @SQLString
 						SET @error = @@error
 						IF @error <> 0
 							BEGIN
-								-- Если были ошибки, то восстановить полную копию не удалось
-								SET @subject = 'ОШИБКА ВОССТАНОВЛЕНИЯ базы данных ' + @DBName
-								SET @finalmassage = 'Ошибка снятия монопольного режима для базы данных ' + @DBName + CHAR(13) + CHAR(13)
-									+ 'Код ошибки: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
-									+ 'Текст T-SQL: ' + CHAR(13) + @SQLString
+								-- Р•СЃР»Рё Р±С‹Р»Рё РѕС€РёР±РєРё, С‚Рѕ РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ РїРѕР»РЅСѓСЋ РєРѕРїРёСЋ РЅРµ СѓРґР°Р»РѕСЃСЊ
+								SET @subject = 'РћРЁРР‘РљРђ Р’РћРЎРЎРўРђРќРћР’Р›Р•РќРРЇ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName
+								SET @finalmassage = 'РћС€РёР±РєР° СЃРЅСЏС‚РёСЏ РјРѕРЅРѕРїРѕР»СЊРЅРѕРіРѕ СЂРµР¶РёРјР° РґР»СЏ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName + CHAR(13) + CHAR(13)
+									+ 'РљРѕРґ РѕС€РёР±РєРё: ' + CAST(@error as NVARCHAR(10)) + CHAR(13) + CHAR(13)
+									+ 'РўРµРєСЃС‚ T-SQL: ' + CHAR(13) + @SQLString
 							END
 						ELSE
 							BEGIN
-								-- Успешное выполнение всех операций
-								SET @subject = 'Успешное восстановление базы данных ' + @DBName
-								SET @finalmassage = 'Успешное восстановление базы данных ' + @DBName + ' из резервной копии ' + @physicalName + ' на момент времени ' + Replace(CONVERT(nvarchar, @BackupTime, 126),':','-')
+								-- РЈСЃРїРµС€РЅРѕРµ РІС‹РїРѕР»РЅРµРЅРёРµ РІСЃРµС… РѕРїРµСЂР°С†РёР№
+								SET @subject = 'РЈСЃРїРµС€РЅРѕРµ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName
+								SET @finalmassage = 'РЈСЃРїРµС€РЅРѕРµ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ Р±Р°Р·С‹ РґР°РЅРЅС‹С… ' + @DBName + ' РёР· СЂРµР·РµСЂРІРЅРѕР№ РєРѕРїРёРё ' + @physicalName + ' РЅР° РјРѕРјРµРЅС‚ РІСЂРµРјРµРЅРё ' + Replace(CONVERT(nvarchar, @BackupTime, 126),':','-')
 							END
 						END
 					END
@@ -225,11 +225,11 @@ ELSE
 		END
 	END
 
--- Удаляем временные таблицы
+-- РЈРґР°Р»СЏРµРј РІСЂРµРјРµРЅРЅС‹Рµ С‚Р°Р±Р»РёС†С‹
 drop table #BackupFiles
 drop table #BackupFilesFinal
 
--- Если задан профиль электронной почты, отправим сообщение
+-- Р•СЃР»Рё Р·Р°РґР°РЅ РїСЂРѕС„РёР»СЊ СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РїРѕС‡С‚С‹, РѕС‚РїСЂР°РІРёРј СЃРѕРѕР±С‰РµРЅРёРµ
 IF @profile_name <> '' and @recipients <> ''
 EXEC msdb.dbo.sp_send_dbmail
     @profile_name = @profile_name,
@@ -237,7 +237,7 @@ EXEC msdb.dbo.sp_send_dbmail
     @body = @finalmassage,
     @subject = @subject;
 
--- Выводим сообщение о результате
+-- Р’С‹РІРѕРґРёРј СЃРѕРѕР±С‰РµРЅРёРµ Рѕ СЂРµР·СѓР»СЊС‚Р°С‚Рµ
 SELECT
 	@subject as massage
 	
